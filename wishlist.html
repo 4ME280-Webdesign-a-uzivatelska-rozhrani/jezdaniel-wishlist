@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Můj wishlist</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      margin: 0.5rem 0;
+    }
+    .gift {
+      border-bottom: 1px solid #ccc;
+      padding: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Můj narozeninový wishlist</h1>
+  <div id="content">Načítám seznam dárků...</div>
+
+  <script>
+    async function loadWishlist() {
+      const response = await fetch('https://raw.githubusercontent.com/4ME280-Webdesign-a-uzivatelska-rozhrani/jezdaniel-wishlist/main/wishlist.md');
+      const text = await response.text();
+
+      // Jednoduchý převod Markdownu na HTML (velmi základní)
+      const html = text
+        .split("\n- ").slice(1)
+        .map(item => {
+          const lines = item.split('\n  - ').map(line => line.trim());
+          const title = lines[0].replace(/\*\*/g, '');
+          const link = (lines[1].match(/\((.*?)\)/) || [])[1];
+          const image = (lines[2].match(/\((.*?)\)/) || [])[1];
+          const price = lines[3]?.replace('Cena: ', '') || '';
+
+          return `
+            <div class="gift">
+              <h2>${title}</h2>
+              <p><a href="${link}" target="_blank">Odkaz na produkt</a></p>
+              <img src="${image}" alt="${title}" />
+              <p><strong>Cena:</strong> ${price}</p>
+            </div>
+          `;
+        })
+        .join("");
+
+      document.getElementById("content").innerHTML = html;
+    }
+
+    loadWishlist().catch(err => {
+      document.getElementById("content").innerHTML = "Nepodařilo se načíst wishlist.";
+      console.error(err);
+    });
+  </script>
+</body>
+</html>
