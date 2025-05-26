@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Můj wishlist (JSON verze)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f4f4f4;
+        }
+        .gift {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .gift img {
+            max-width: 300px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .gift input {
+            margin-top: 10px;
+            padding: 5px;
+        }
+        .gift button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Můj narozeninový wishlist</h1>
+    <div id="wishlist">Načítám dárky...</div>
+
+    <script>
+        const binId = "6834d2b88a456b7966a5b348";
+        const masterKey = "$2a$10$bH8oSMaOTGohKspCup5KLuhTdi1/Qp1L24zYYN/eCX3.Ycoowunae";
+
+        // Načtení dat z JSON Binu
+        fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+            headers: {
+                "X-Master-Key": masterKey
+            }
+        })
+        .then(res => res.json())
+        .then(json => {
+            const data = json.record;
+            let html = "";
+            data.forEach((item, index) => {
+                html += `
+                    <div class="gift">
+                        <h2>${item.name}</h2>
+                        <p><strong>Cena:</strong> ${item.price}</p>
+                        <a href="${item.link}" target="_blank">Odkaz na produkt</a><br>
+                        <img src="${item.image}" alt="${item.name}">
+                        <p><strong>Zamluveno:</strong> <span id="reserved-${index}">${item.reserved_by || "nikým"}</span></p>
+                        <input type="text" id="input-${index}" placeholder="Zadej své jméno">
+                        <button onclick="reserve(${index})">Zamluvit</button>
+                    </div>
+                `;
+            });
+            document.getElementById("wishlist").innerHTML = html;
+            window.gifts = data; // uložíme si data globálně
+        })
+        .catch(err => {
+            console.error("Chyba při načítání dat:", err);
+            document.getElementById("wishlist").innerText = "Nepodařilo se načíst wishlist.";
+        });
+
+        // Uložení jména
+        function reserve(index) {
+            const name = document.getElementById(`input-${index}`).value.trim();
+            if (!name) return alert("Zadej jméno!");
+            window.gifts[index].reserved_by = name;
+
+            fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": masterKey
+                },
+                body: JSON.stringify(window.gifts)
+            })
+            .then(res => {
+                if (res.ok) {
+                    document.getElementById(`reserved-${index}`).innerText = name;
+                    document.getElementById(`input-${index}`).value = "";
+                    alert("Zamluveno!");
+                } else {
+                    throw new Error("Chyba při ukládání.");
+                }
+            })
+            .catch(err => {
+                console.error("Chyba:", err);
+                alert("Nastala chyba při ukládání.");
+            });
+        }
+    </script>
+</body>
+</html>
